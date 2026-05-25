@@ -1,0 +1,20 @@
+		(1)	(2)
+		DiD	FE
+VARIABLES	LABELS	Income (BDT)	Income (BDT)
+			
+treatment	treatment	149.1	
+		(151.6)	
+time	Period (0=Baseline, 1=Endline)	405.2***	405.2***
+		(130.5)	(130.0)
+treat_post	Treatment × Post	-47.12	-47.12
+		(224.6)	(223.8)
+Constant	Constant	463.6	474.0***
+		(284.7)	(59.98)
+			
+Observations		990	990
+R-squared		0.013	0.023
+Division FE		Yes	Yes
+Individual FE		No	Yes
+Number of idno			495
+Robust standard errors in parentheses			
+*** p<0.01, ** p<0.05, * p<0.1			

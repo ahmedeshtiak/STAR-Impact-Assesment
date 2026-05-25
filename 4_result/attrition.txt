@@ -1,0 +1,58 @@
+		(1)
+VARIABLES	LABELS	Attrited (1 = not found in endline)
+		
+1.treatment	treatment = 1, Treatment	0.234
+		(0.181)
+youth_age	Youth Age (years)	0.006
+		(0.004)
+1.youth_male	Youth is Male = 1	-0.071
+		(0.047)
+1.youth_married	Youth is Married = 1	-0.068
+		(0.069)
+hh_size	Household Size	-0.013
+		(0.012)
+land_amount	Land Amount	0.000
+		(0.001)
+num_cows	Number of Cows	-0.023
+		(0.019)
+num_goats_sheep	Goats/Sheep Owned	0.048***
+		(0.015)
+monthly_income	Household monthly average income (BDT)	0.000
+		(0.000)
+treat_X_youth_age	Treatment × youth_age	-0.013**
+		(0.006)
+treat_X_youth_male	Treatment × youth_male	0.069
+		(0.069)
+treat_X_youth_married	Treatment × youth_married	0.169*
+		(0.100)
+treat_X_hh_size	Treatment × hh_size	-0.001
+		(0.018)
+treat_X_land_amount	Treatment × land_amount	-0.000
+		(0.001)
+treat_X_num_cows	Treatment × num_cows	0.062**
+		(0.025)
+treat_X_num_goats_sheep	Treatment × num_goats_sheep	-0.053**
+		(0.024)
+treat_X_monthly_income	Treatment × monthly_income	-0.000
+		(0.000)
+2.division_code	Division (stratification level) = 2, Chattogram	0.010
+		(0.080)
+3.division_code	Division (stratification level) = 3, Dhaka	0.008
+		(0.080)
+4.division_code	Division (stratification level) = 4, Khulna	0.030
+		(0.078)
+5.division_code	Division (stratification level) = 5, Mymensingh	0.029
+		(0.091)
+6.division_code	Division (stratification level) = 6, Rajshahi	-0.019
+		(0.087)
+7.division_code	Division (stratification level) = 7, Rangpur	0.038
+		(0.098)
+Constant	Constant	0.330**
+		(0.139)
+		
+Observations		896
+R-squared		0.028
+Adj. R-squared		0.00216
+F-statistic		1.810
+Robust standard errors in parentheses		
+*** p<0.01, ** p<0.05, * p<0.1		
