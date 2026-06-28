@@ -1,119 +1,27 @@
 /*******************************************************************************
-Project:        YRF - STAR+ Impact Assessment (Final Exam, Quantitative stream)
-Organization:   BIGD, BRAC University
-Author:         Corrected version
-Description:    Corrected, error-free do file.
-                RCT: youths with disabilities; stratified at DIVISION level,
-                randomized at BRANCH level.
-                Assignment var  = treatment  (baseline)
-                Take-up var      = participant (endline)
-
-================================================================================
-  WHAT WAS WRONG IN THE ORIGINAL DO FILE  (summary of fixes applied below)
-================================================================================
- SETUP
-  [S1] outreg2 and estout (eststo/esttab) are USED but were NOT installed.
-       -> added ssc install for both.
-  [S2] Hard-coded Windows path; output folders assumed to exist.
-       -> single editable ${ROOT}; capture mkdir for every sub-folder.
-  [S3] The division-recode block and the income-construction block were
-       copy-pasted 4-5 times (Q4,Q5,Q6,Q8) -> divergence risk.
-       -> built ONE clean baseline file and ONE clean endline file and reuse.
-
- Q1 demographic long
-  [Q1a] Sex / marital value labels not carried to the long file (exam shows
-        text categories) -> labels applied; helper index dropped.
-
- Q2 disability graph
-  [Q2a] Used "treat" (relies on name abbreviation of "treatment"); the exam
-        states the variable is "treatment" -> use full name everywhere.
-
- Q3 balance table
-  [Q3a] Used "treat" (abbreviation) -> "treatment".
-  [Q3b] No strata (division) fixed effects. Randomisation was conditional on
-        the division strata; balance must be tested within strata
-        (Bruhn & McKenzie 2009) -> added i.division_code.
-  [Q3c] Exported table showed only the coefficient & SE -> NO group means,
-        N, or stars context. Rebuilt to report Control mean, Treatment mean,
-        Difference, clustered p-value, N.
-  [Q3d] No omnibus/joint orthogonality test -> added joint F-test
-        (regress treatment on all covariates) = overall balance test.
-  [Q3e] youth_married = (res_marital_code==2) coded the 63 MISSING marital
-        records as 0 ("not married") instead of missing -> guarded with
-        if !missing(res_marital_code).  (Same logic fixed in the clean build.)
-  [Q3f] Redundant preserve/drop-if-missing/restore around each reg
-        (reg already drops missings); b7 inconsistently lacked it -> removed.
-
- Q4 attrition
-  [Q4a] THE KEY OMISSION: the regression was run but the actual TEST of
-        balanced attrition was never performed. -> added testparm joint tests
-        (i) of the treatment x covariate interactions (differential attrition)
-        and (ii) of treatment + all interactions (overall attrition balance).
-  [Q4b] Interactions built by hand (8 gen lines) -> factor-variable notation
-        i.treatment##(...) so the joint test is clean and collinear-safe.
-  [Q4c] branch_id here vs branch_code elsewhere -> standardised to branch_code.
-
- Q5 ITT / LATE
-  [Q5a] *** CRITICAL ECONOMETRICS *** LATE is 2SLS with treatment instrumenting
-        participation, but the FIRST STAGE IS ~ZERO in this sample
-        (take-up: control 36.6% vs treatment 38.2%; diff ~1.6 pp).
-        A weak/irrelevant instrument makes 2SLS LATE unreliable. The original
-        never checked this -> added an explicit first-stage regression,
-        first-stage F-test and estat firststage, with a printed warning.
-  [Q5b] outreg2 ctitle("ITT","Income (BDT)") passes two comma-separated
-        strings to an option that takes ONE title -> single clear ctitle().
-  [Q5c] ITT/LATE are estimated only on retained (non-attrited) units; with
-        ~36% attrition this can bias estimates -> documented as a caveat
-        (links to the Q4 differential-attrition test).
-
- Q6 covariate adjustment
-  [Q6a] Adding baseline covariates with missing values silently dropped
-        observations, shrinking & changing the sample vs Q5 and potentially
-        re-introducing imbalance. -> missing-indicator method: pre-treatment
-        covariates imputed + a missing dummy, so the estimation sample is
-        IDENTICAL to the unadjusted ITT sample (valid for an RCT).
-
- Q7 heterogeneity (gender)
-  [Q7a] BUG: the Q6 "ITT+Cov / LATE+Cov" blocks were pasted again at the end
-        and appended a SECOND time to the workbook -> removed the duplicate.
-  [Q7b] Relied on whatever was left in memory from Q6 -> loads the clean
-        analysis sample explicitly.
-
- Q8/Q9 DiD & FE
-  [Q8a] xtreg ..., fe included i.division_code, which is time-invariant within
-        idno and collinear with the unit fixed effects (Stata drops it) ->
-        removed from the FE model.
-  [Q8b] Hard-coded results text at the end -> replaced with values produced
-        by the run.
-  [Q8c] Outcome is constructed wave-appropriately (baseline uses "earnings
-        last month"; endline uses wage + business-profit/12 because the
-        instrument changed). Documented so the DiD "change" is interpreted
-        correctly; only 2 periods => parallel-trends cannot be tested (caveat).
-
- NB: variable abbreviation is turned OFF below so latent "treat"->"treatment"
-     type bugs surface immediately rather than silently "working".
+Project:		YRF 
+Organization:	BIGD, BracU
+Author:			Ahmed Eshtiak
+Date created:	12/03/2026
+Last edited:	12/03/2026
+Last edited by: Ahmed Eshtiak
+Description:	Final EXAM; YRF Evaluation
+				
+	
 *******************************************************************************/
 
+********************
+**# Necessary Setup
+********************
+clear all                     
+clear matrix                
+set more off                  
+version 17                   
+cap log close _all          
+cap estimates drop _all   
+set maxvar 50000
 
-********************************************************************************
-**# 0.  SETUP
-********************************************************************************
-clear all
-set more off
-version 17
-set varabbrev off            // force full variable names (catches "treat" bugs)
-cap log close _all
-cap estimates drop _all
-capture set maxvar 10000     // raw baseline has ~2,200 vars; capture = safe on BE/SE
-
-* ---- packages actually used by this script -------------------------------- *
-foreach p in estout outreg2 {
-    capture which `p'
-    if _rc ssc install `p', replace
-}
-
-* ---- paths : EDIT ONLY THIS LINE ------------------------------------------ *
-* NOTE: this must match your folder name EXACTLY (your original spelling kept).
+**# Directory Setup
 global ROOT  "D:\Ahmed Eshtiak\Local Disk E\Projects\STAR+ Impact Assesment"
 
 global RAW    "${ROOT}/0_raw"
@@ -122,9 +30,6 @@ global DO     "${ROOT}/3_do"
 global RESULT "${ROOT}/4_result"
 global GRAPH  "${ROOT}/5_graph"
 
-foreach d in CLEAN RESULT GRAPH {
-    capture mkdir "${`d'}"
-}
 
 * names of the raw files (without extension)
 global BL_RAW "${RAW}/STAR+ Baseline"
@@ -143,7 +48,7 @@ if _rc {
 ********************************************************************************
 **# A.  BUILD A CLEAN BASELINE ANALYSIS FILE  (constructed once, reused)
 ********************************************************************************
-use "${BL_RAW}", clear
+use "${RAW}/STAR+ Baseline", clear
 gen division = ""
 replace division = "Barishal"   if inlist(s1q5,"Barisal","Bhola","Patuakhali")
 replace division = "Chattogram" if inlist(s1q5,"Chittagong","Chandpur","Comilla","Brahmanbaria","Lakshmipur","Noakhali","Feni")
@@ -202,7 +107,7 @@ save "${CLEAN}/baseline_clean.dta", replace
 ********************************************************************************
 **# B.  BUILD A CLEAN ENDLINE ANALYSIS FILE  (constructed once, reused)
 ********************************************************************************
-use "${EL_RAW}", clear
+use "${RAW}/STAR+ Endline", clear
 
 * consent
 gen has_consent = (trim(learner_c) != "") | (trim(guardian_c) != "")
@@ -255,7 +160,7 @@ save "${CLEAN}/endline_clean.dta", replace
 ********************************************************************************
 **# Q1.  DEMOGRAPHIC MODULE - LONG DATASET
 ********************************************************************************
-use "${BL_RAW}", clear
+use "${RAW}/STAR+ Baseline", clear
 
 keep idno lino_* col2_* col4_* col6y_* col7_*
 drop lino_loan_*
@@ -295,7 +200,7 @@ save "${CLEAN}/demographic_long.dta", replace
 ********************************************************************************
 **# Q2.  DISABILITY DISTRIBUTION - BAR GRAPH (treatment vs control)
 ********************************************************************************
-use "${BL_RAW}", clear
+use "${RAW}/STAR+ Baseline", clear
 
 collapse (sum) res_disability_1 res_disability_2 res_disability_3 res_disability_4 res_disability_5 res_disability_6 res_disability_7 res_disability_8 res_disability_9 res_disability_10 res_disability_11 res_disability_555, by(treatment)
 
