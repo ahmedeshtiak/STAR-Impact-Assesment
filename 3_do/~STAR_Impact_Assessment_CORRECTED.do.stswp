@@ -241,6 +241,12 @@ replace youth_income = 0 if q911 == 0
 label var youth_income "Youth monthly income - endline (BDT)"
 
 
+gen  employed = q911
+label define employed 0 "Unemployed" 1 "Employed"
+label values employed employed
+label var employed "Youth Employement"
+
+
 //keep idno participant youth_income employed
 label data "STAR+ endline - cleaned analysis file"
 save "${CLEAN}/endline_clean.dta", replace
@@ -405,52 +411,23 @@ keep if _merge==3
 drop _merge
 
 sum youth_income employed treatment participant
-tab treatment participant, row
 
-* ---------- first-stage / instrument-strength diagnostic [Q5a] ------------- *
-*  treatment must shift take-up for LATE to be credible.
-regress participant treatment i.division_code, vce(cluster branch_code)
-test treatment
-scalar fs_F = r(F)
-display _n "==================================================================="
-display    " FIRST-STAGE STRENGTH (instrument = treatment, endogenous = participant)"
-display    "   First-stage F on the instrument = " %6.2f fs_F
-if fs_F < 10 {
-    display " *** WARNING: F < 10 -> WEAK INSTRUMENT.  In this sample treatment"
-    display "     barely shifts take-up, so the 2SLS LATE estimates below are"
-    display "     unreliable (large SE, biased toward OLS). Interpret with care."
-}
-display    "==================================================================="
 
-eststo clear
+// income ITT
+regress youth_income treatment i.division_code, vce(cluster branch_code)
+outreg2 using "${RESULT}/itt_late_results.xls", replace  ctitle("ITT - Income") addtext(Division FE, Yes) label
 
-* ITT - income
-regress youth_income i.treatment i.division_code, vce(cluster branch_code)
-outreg2 using "${RESULT}/itt_late_results.xls", replace ///
-    keep(1.treatment) ctitle("ITT - Income (BDT)") ///
-    addtext(Division FE, Yes) label
+// employment ITT 
+regress employed treatment i.division_code, vce(cluster branch_code)
+outreg2 using "${RESULT}/itt_late_results.xls", append  ctitle("ITT - Employed") addtext(Division FE, Yes) label
 
-* ITT - employment
-regress employed i.treatment i.division_code, vce(cluster branch_code)
-outreg2 using "${RESULT}/itt_late_results.xls", append ///
-    keep(1.treatment) ctitle("ITT - Employed") ///
-    addtext(Division FE, Yes) label
-
-* LATE - income
-ivregress 2sls youth_income i.division_code (participant = treatment), ///
-    vce(cluster branch_code) first
-estat firststage
-outreg2 using "${RESULT}/itt_late_results.xls", append ///
-    keep(participant) ctitle("LATE - Income (BDT)") ///
-    addtext(Division FE, Yes) label
+// LATE - income
+ivregress 2sls youth_income i.division_code (participant = treatment),vce(cluster branch_code) 
+outreg2 using "${RESULT}/itt_late_results.xls", append  ctitle("LATE - Income ") addtext(Division FE, Yes) label
 
 * LATE - employment
-ivregress 2sls employed i.division_code (participant = treatment), ///
-    vce(cluster branch_code) first
-estat firststage
-outreg2 using "${RESULT}/itt_late_results.xls", append ///
-    keep(participant) ctitle("LATE - Employed") ///
-    addtext(Division FE, Yes) label
+ivregress 2sls employed i.division_code (participant = treatment), vce(cluster branch_code) 
+outreg2 using "${RESULT}/itt_late_results.xls", append keep(participant) ctitle("LATE - Employed") addtext(Division FE, Yes) label
 
 
 ********************************************************************************
@@ -458,8 +435,7 @@ outreg2 using "${RESULT}/itt_late_results.xls", append ///
 *    (appended to the Q5 ITT/LATE workbook)
 ********************************************************************************
 use "${CLEAN}/endline_clean.dta", clear
-merge 1:1 idno using "${CLEAN}/baseline_clean.dta", ///
-    keepusing(treatment division_code branch_code $BALVARS)
+merge 1:1 idno using "${CLEAN}/baseline_clean.dta"
 keep if _merge==3
 drop _merge
 

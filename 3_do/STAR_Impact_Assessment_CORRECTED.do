@@ -114,7 +114,7 @@ foreach p in estout outreg2 {
 
 * ---- paths : EDIT ONLY THIS LINE ------------------------------------------ *
 * NOTE: this must match your folder name EXACTLY (your original spelling kept).
-global ROOT  "C:\Users\Ahmed Eshtiak\Desktop\STAR+ Impact Assesment"
+global ROOT  "D:\Ahmed Eshtiak\Local Disk E\Projects\STAR+ Impact Assesment"
 
 global RAW    "${ROOT}/0_raw"
 global CLEAN  "${ROOT}/1_clean"
@@ -239,6 +239,12 @@ gen youth_income = (wage_inc_1   + wage_inc_2   + wage_inc_3)   + (self_gross_1 
 replace youth_income = 0 if q911 == 0
 
 label var youth_income "Youth monthly income - endline (BDT)"
+
+
+gen  employed = q911
+label define employed 0 "Unemployed" 1 "Employed"
+label values employed employed
+label var employed "Youth Employement"
 
 
 //keep idno participant youth_income employed
@@ -386,21 +392,21 @@ drop _merge
 
 * attrition 1 - simple
 reg attrited treatment
-outreg2 using "${RESULT}/attrition.xls", replace excel label addstat("Adj. R-squared", e(r2_a), "F-statistic", e(F))
+outreg2 using "${RESULT}/attrition.xls", replace excel label
 
 * attrition 2 - with controls
 reg attrited treatment youth_age i.youth_male i.youth_married hh_size land_amount num_cows num_goats_sheep monthly_hh_income i.division_code, vce(cluster branch_code)
-outreg2 using "${RESULT}/attrition.xls", append excel label addstat("Adj. R-squared", e(r2_a), "F-statistic", e(F))
+outreg2 using "${RESULT}/attrition.xls", append excel label 
 
 * attrition 3 - with interactions
 regress attrited i.treatment youth_age i.youth_male i.youth_married hh_size land_amount num_cows num_goats_sheep monthly_hh_income i.division_code i.treatment#c.youth_age i.treatment#i.youth_male i.treatment#i.youth_married i.treatment#c.hh_size i.treatment#c.land_amount i.treatment#c.num_cows i.treatment#c.num_goats_sheep i.treatment#c.monthly_hh_income, vce(cluster branch_code)
-outreg2 using "${RESULT}/attrition.xls", append excel label addstat("Adj. R-squared", e(r2_a), "F-statistic", e(F))
+outreg2 using "${RESULT}/attrition.xls", append excel 
 
 ********************************************************************************
 **# Q5.  ITT and LATE  (income & employment)
 ********************************************************************************
 use "${CLEAN}/endline_clean.dta", clear
-merge 1:1 idno using "${CLEAN}/baseline_clean.dta", keepusing(treatment division_code branch_code)
+merge 1:1 idno using "${CLEAN}/baseline_clean.dta"
 keep if _merge==3
 drop _merge
 
