@@ -432,26 +432,13 @@ outreg2 using "${RESULT}/itt_late_results.xls", append keep(participant) ctitle(
 
 ********************************************************************************
 **# Q6.  ITT / LATE WITH BASELINE COVARIATES
-*    (appended to the Q5 ITT/LATE workbook)
 ********************************************************************************
 use "${CLEAN}/endline_clean.dta", clear
 merge 1:1 idno using "${CLEAN}/baseline_clean.dta"
 keep if _merge==3
 drop _merge
 
-* [Q6a] missing-indicator method so the COVARIATE-ADJUSTED sample equals the
-*       unadjusted ITT sample (covariates are pre-treatment => no bias).
-global COVS ""
-foreach v of varlist $BALVARS {
-    quietly count if missing(`v')
-    if r(N) > 0 {
-        gen byte mi_`v' = missing(`v')
-        quietly sum `v', meanonly
-        replace `v' = r(mean) if missing(`v')
-        global COVS "$COVS `v' mi_`v'"
-    }
-    else global COVS "$COVS `v'"
-}
+
 
 * ITT + covariates
 regress youth_income i.treatment $COVS i.division_code, vce(cluster branch_code)
