@@ -411,253 +411,119 @@ keep if _merge==3
 drop _merge
 
 sum youth_income employed treatment participant
-tab treatment participant, row
 
-* ---------- first-stage / instrument-strength diagnostic [Q5a] ------------- *
-*  treatment must shift take-up for LATE to be credible.
-regress participant treatment i.division_code, vce(cluster branch_code)
-test treatment
-scalar fs_F = r(F)
-display _n "==================================================================="
-display    " FIRST-STAGE STRENGTH (instrument = treatment, endogenous = participant)"
-display    "   First-stage F on the instrument = " %6.2f fs_F
-if fs_F < 10 {
-    display " *** WARNING: F < 10 -> WEAK INSTRUMENT.  In this sample treatment"
-    display "     barely shifts take-up, so the 2SLS LATE estimates below are"
-    display "     unreliable (large SE, biased toward OLS). Interpret with care."
-}
-display    "==================================================================="
 
-eststo clear
+// income ITT
+regress youth_income treatment i.division_code, vce(cluster branch_code)
+outreg2 using "${RESULT}/itt_late_results.xls", replace  ctitle("ITT - Income") addtext(Division FE, Yes) label
 
-* ITT - income
-regress youth_income i.treatment i.division_code, vce(cluster branch_code)
-outreg2 using "${RESULT}/itt_late_results.xls", replace ///
-    keep(1.treatment) ctitle("ITT - Income (BDT)") ///
-    addtext(Division FE, Yes) label
+// employment ITT 
+regress employed treatment i.division_code, vce(cluster branch_code)
+outreg2 using "${RESULT}/itt_late_results.xls", append  ctitle("ITT - Employed") addtext(Division FE, Yes) label
 
-* ITT - employment
-regress employed i.treatment i.division_code, vce(cluster branch_code)
-outreg2 using "${RESULT}/itt_late_results.xls", append ///
-    keep(1.treatment) ctitle("ITT - Employed") ///
-    addtext(Division FE, Yes) label
-
-* LATE - income
-ivregress 2sls youth_income i.division_code (participant = treatment), ///
-    vce(cluster branch_code) first
-estat firststage
-outreg2 using "${RESULT}/itt_late_results.xls", append ///
-    keep(participant) ctitle("LATE - Income (BDT)") ///
-    addtext(Division FE, Yes) label
+// LATE - income
+ivregress 2sls youth_income i.division_code (participant = treatment),vce(cluster branch_code) 
+outreg2 using "${RESULT}/itt_late_results.xls", append  ctitle("LATE - Income ") addtext(Division FE, Yes) label
 
 * LATE - employment
-ivregress 2sls employed i.division_code (participant = treatment), ///
-    vce(cluster branch_code) first
-estat firststage
-outreg2 using "${RESULT}/itt_late_results.xls", append ///
-    keep(participant) ctitle("LATE - Employed") ///
-    addtext(Division FE, Yes) label
+ivregress 2sls employed i.division_code (participant = treatment), vce(cluster branch_code) 
+outreg2 using "${RESULT}/itt_late_results.xls", append keep(participant) ctitle("LATE - Employed") addtext(Division FE, Yes) label
 
 
 ********************************************************************************
 **# Q6.  ITT / LATE WITH BASELINE COVARIATES
-*    (appended to the Q5 ITT/LATE workbook)
 ********************************************************************************
 use "${CLEAN}/endline_clean.dta", clear
-merge 1:1 idno using "${CLEAN}/baseline_clean.dta", ///
-    keepusing(treatment division_code branch_code $BALVARS)
+merge 1:1 idno using "${CLEAN}/baseline_clean.dta"
 keep if _merge==3
 drop _merge
 
-* [Q6a] missing-indicator method so the COVARIATE-ADJUSTED sample equals the
-*       unadjusted ITT sample (covariates are pre-treatment => no bias).
-global COVS ""
-foreach v of varlist $BALVARS {
-    quietly count if missing(`v')
-    if r(N) > 0 {
-        gen byte mi_`v' = missing(`v')
-        quietly sum `v', meanonly
-        replace `v' = r(mean) if missing(`v')
-        global COVS "$COVS `v' mi_`v'"
-    }
-    else global COVS "$COVS `v'"
-}
+local base youth_age youth_male youth_married hh_size land_amount num_cows num_goats_sheep monthly_hh_income
 
-* ITT + covariates
-regress youth_income i.treatment $COVS i.division_code, vce(cluster branch_code)
-outreg2 using "${RESULT}/itt_late_results.xls", append ///
-    keep(1.treatment $BALVARS) ctitle("ITT+Cov - Income (BDT)") ///
-    addtext(Division FE, Yes, Baseline covariates, Yes) label
+// ITT - Income + baseline
+regress youth_income treatment youth_age youth_male youth_married hh_size land_amount num_cows num_goats_sheep monthly_hh_income i.division_code, vce(cluster branch_code)
+outreg2 using "${RESULT}/itt_late_results.xls", append  ctitle("ITT - Income With Basline") addtext(Division FE, Yes, Baseline Control, Yes) label
 
-regress employed i.treatment $COVS i.division_code, vce(cluster branch_code)
-outreg2 using "${RESULT}/itt_late_results.xls", append ///
-    keep(1.treatment $BALVARS) ctitle("ITT+Cov - Employed") ///
-    addtext(Division FE, Yes, Baseline covariates, Yes) label
+// ITT - Employed + baseline
+regress employed treatment youth_age youth_male youth_married hh_size land_amount num_cows num_goats_sheep monthly_hh_income i.division_code, vce(cluster branch_code)
+outreg2 using "${RESULT}/itt_late_results.xls", append  ctitle("ITT - Employement With Basline") addtext(Division FE, Yes, Baseline Control, Yes) label
 
 * LATE + covariates
-ivregress 2sls youth_income $COVS i.division_code ///
-    (participant = treatment), vce(cluster branch_code)
-outreg2 using "${RESULT}/itt_late_results.xls", append ///
-    keep(participant $BALVARS) ctitle("LATE+Cov - Income (BDT)") ///
-    addtext(Division FE, Yes, Baseline covariates, Yes) label
+ivregress 2sls youth_income (participant = treatment) youth_age youth_male youth_married hh_size land_amount num_cows num_goats_sheep monthly_hh_income i.division_code, vce(cluster branch_code)
+outreg2 using "${RESULT}/itt_late_results.xls", append  ctitle("LATE - Income With Basline") addtext(Division FE, Yes, Baseline Control, Yes) label
 
-ivregress 2sls employed $COVS i.division_code ///
-    (participant = treatment), vce(cluster branch_code)
-outreg2 using "${RESULT}/itt_late_results.xls", append ///
-    keep(participant $BALVARS) ctitle("LATE+Cov - Employed") ///
-    addtext(Division FE, Yes, Baseline covariates, Yes) label
-
+ivregress 2sls employed (participant = treatment)  youth_age youth_male youth_married hh_size land_amount num_cows num_goats_sheep monthly_hh_income i.division_code, vce(cluster branch_code)
+outreg2 using "${RESULT}/itt_late_results.xls", append  ctitle("LATE - Employemnt With Basline") addtext(Division FE, Yes, Baseline Control, Yes) label
 
 ********************************************************************************
 **# Q7.  HETEROGENEITY BY GENDER  (controlling for baseline covariates)
 ********************************************************************************
-* [Q7b] load the analysis sample explicitly (do not rely on memory)
 use "${CLEAN}/endline_clean.dta", clear
-merge 1:1 idno using "${CLEAN}/baseline_clean.dta", ///
-    keepusing(treatment division_code branch_code $BALVARS)
+merge 1:1 idno using "${CLEAN}/baseline_clean.dta"
 keep if _merge==3
 drop _merge
 
-* covariates EXCLUDING youth_male (it enters directly), with imputation
-global COVS_G ""
-foreach v of varlist youth_age youth_married hh_size land_amount ///
-                     num_cows num_goats_sheep monthly_hh_income {
-    quietly count if missing(`v')
-    if r(N) > 0 {
-        gen byte mi_`v' = missing(`v')
-        quietly sum `v', meanonly
-        replace `v' = r(mean) if missing(`v')
-        global COVS_G "$COVS_G `v' mi_`v'"
-    }
-    else global COVS_G "$COVS_G `v'"
-}
+// interaction term
+gen male_int = treatment*youth_male
+gen parti_male = participant * youth_male
 
 * ITT heterogeneity: income  (treatment x male)
-regress youth_income i.treatment##i.youth_male $COVS_G i.division_code, ///
-    vce(cluster branch_code)
-outreg2 using "${RESULT}/itt_late_results.xls", append ///
-    keep(1.treatment 1.youth_male 1.treatment#1.youth_male $COVS_G) ///
-    ctitle("ITT Gender - Income (BDT)") ///
-    addtext(Division FE, Yes, Baseline covariates, Yes) label
+regress youth_income treatment youth_male male_int youth_age youth_married hh_size land_amount num_cows num_goats_sheep monthly_hh_income i.division_code, vce(cluster branch_code)
 
-* ITT heterogeneity: employment
-regress employed i.treatment##i.youth_male $COVS_G i.division_code, ///
-    vce(cluster branch_code)
-outreg2 using "${RESULT}/itt_late_results.xls", append ///
-    keep(1.treatment 1.youth_male 1.treatment#1.youth_male $COVS_G) ///
-    ctitle("ITT Gender - Employed") ///
-    addtext(Division FE, Yes, Baseline covariates, Yes) label
+outreg2 using "${RESULT}/itt_late_results.xls", append ctitle("ITT Gender Heterogenety- Income") addtext(Division FE, Yes, Baseline covariates, Yes) label
 
-* LATE heterogeneity: two endogenous (participant, participant x male)
-*   instrumented by (treatment, treatment x male). Weak-instrument caveat [Q5a]
-*   applies even more strongly here.
-gen treat_male = treatment * youth_male
-gen parti_male = participant * youth_male
-label var treat_male "Treatment x Male"
-label var parti_male "Participant x Male"
+* ITT heterogeneity: employemnt income  (treatment x male)
+regress employed treatment youth_male male_int youth_age youth_married hh_size land_amount num_cows num_goats_sheep monthly_hh_income i.division_code, vce(cluster branch_code)
 
-ivregress 2sls youth_income youth_male $COVS_G i.division_code ///
-    (participant parti_male = treatment treat_male), vce(cluster branch_code) first
-outreg2 using "${RESULT}/itt_late_results.xls", append ///
-    keep(participant parti_male youth_male $COVS_G) ///
-    ctitle("LATE Gender - Income (BDT)") ///
-    addtext(Division FE, Yes, Baseline covariates, Yes) label
+outreg2 using "${RESULT}/itt_late_results.xls", append ctitle("ITT Gender Heterogenety- Employment") addtext(Division FE, Yes, Baseline covariates, Yes) label
 
-ivregress 2sls employed youth_male $COVS_G i.division_code ///
-    (participant parti_male = treatment treat_male), vce(cluster branch_code) first
-outreg2 using "${RESULT}/itt_late_results.xls", append ///
-    keep(participant parti_male youth_male $COVS_G) ///
-    ctitle("LATE Gender - Employed") ///
-    addtext(Division FE, Yes, Baseline covariates, Yes) label
-* [Q7a] the duplicated Q6 ITT+Cov / LATE+Cov block that used to be here is removed.
+* LATE heterogeneity: income  (treatment x male)
+ivregress 2sls youth_income (participant = treatment) youth_age youth_male youth_married hh_size land_amount num_cows num_goats_sheep monthly_hh_income i.division_code, vce(cluster branch_code)
+
+outreg2 using "${RESULT}/itt_late_results.xls", append  ctitle("LATE Gender Heterogenety - Income") addtext(Division FE, Yes, Baseline covariates, Yes) label
+
+* LATE heterogeneity: employemnt  (treatment x male)
+ivregress 2sls employed youth_male youth_age youth_married hh_size land_amount num_cows num_goats_sheep monthly_hh_income i.division_code (participant parti_male = treatment male_int), vce(cluster branch_code)
+
+outreg2 using "${RESULT}/itt_late_results.xls", append ctitle("LATE Gender Heterogenety - Employment") addtext(Division FE, Yes, Baseline covariates, Yes) label
 
 
 ********************************************************************************
-**# Q8/Q9.  BALANCED PANEL  ->  DiD  and  FIXED-EFFECTS
+**# Q8  DiD  and  FIXED-EFFECTS
 ********************************************************************************
-* --- baseline ---
+// baseline
 use "${CLEAN}/baseline_clean.dta", clear
-keep idno treatment division_code branch_code youth_income_bl
 rename youth_income_bl youth_income
-gen wave = 0
+gen time = 0
 tempfile bl_panel
 save `bl_panel'
 
-* --- endline ---
+// Endline
 use "${CLEAN}/endline_clean.dta", clear
-keep idno youth_income
-gen wave = 1
+gen time = 1
 tempfile el_panel
 save `el_panel'
 
-* --- append ---
+// append
 use `bl_panel', clear
 append using `el_panel'
-sort idno wave
+
+// balance pannel
+sort idno time
 duplicates tag idno, gen(dup)
 keep if dup > 0
 drop dup
-
-
-///////////////////////
-
-
-use "${CLEAN}/baseline_clean.dta", clear
-keep idno treatment division_code branch_code youth_income_bl
-rename youth_income_bl youth_income0
-tempfile bl_panel
-save `bl_panel'
-
-* endline youth income (already in the clean file)
-use "${CLEAN}/endline_clean.dta", clear
-keep idno youth_income
-rename youth_income youth_income1
-
-* balanced panel = matched in both waves
-merge 1:1 idno using `bl_panel'
-keep if _merge==3
-drop _merge
-
-* wide -> long
-reshape long youth_income, i(idno treatment division_code branch_code) j(time)
-label var youth_income "Youth monthly income (BDT)"
-label define time_lbl 0 "Baseline" 1 "Endline"
-label values time time_lbl
-label var time "Period (0=baseline, 1=endline)"
-
 isid idno time
 xtset idno time
 
+// time treatment interaction
 gen treat_post = treatment * time
 label var treat_post "Treatment x Post"
 
-* descriptives
-table treatment time, statistic(mean youth_income) statistic(n youth_income)
+//DiD
+regress youth_income treatment time treat_post i.division_code, vce(cluster branch_code)
+outreg2 using "${RESULT}/did_fe_results.xls", replace ctitle("DiD - Income") addtext(Division FE, Yes, Individual FE, No) label
 
-* ---- DiD (pooled OLS) : coefficient on treat_post is the DiD estimate ------ *
-regress youth_income treatment time treat_post i.division_code, ///
-    vce(cluster branch_code)
-scalar did_b = _b[treat_post]
-scalar did_p = 2*ttail(e(df_r), abs(_b[treat_post]/_se[treat_post]))
-outreg2 using "${RESULT}/did_fe_results.xls", replace ///
-    keep(treatment time treat_post) ctitle("DiD - Income (BDT)") ///
-    addtext(Division FE, Yes, Individual FE, No) label
-
-* ---- Individual fixed-effects : treatment (time-invariant) is absorbed ----- *
-* [Q8a] i.division_code is also time-invariant within idno => omitted; left out.
-xtreg youth_income time treat_post, fe vce(cluster branch_code)
-scalar fe_b = _b[treat_post]
-outreg2 using "${RESULT}/did_fe_results.xls", append ///
-    keep(time treat_post) ctitle("FE - Income (BDT)") ///
-    addtext(Division FE, n/a, Individual FE, Yes) label
-
-* [Q8b] results printed from the actual run (not hard-coded)
-display _n "==================================================================="
-display    " DiD treatment effect on income (treat_post) = " %8.2f did_b " BDT (p=" %5.3f did_p ")"
-display    " FE  treatment effect on income (treat_post) = " %8.2f fe_b  " BDT"
-display    " Note: 2 periods only -> parallel-trends assumption cannot be tested."
-display    "==================================================================="
-
-*------------------------------------------------------------------------------
-* END OF DO FILE
-*------------------------------------------------------------------------------
+//Fixed Effect
+xtreg youth_income time treat_post i.division_code, fe vce(cluster branch_code)
+outreg2 using "${RESULT}/did_fe_results.xls", append ctitle("FE - Income") addtext(Division FE, n/a, Individual FE, Yes) label

@@ -1,20 +1,30 @@
-		(1)	(2)
-		DiD	FE
-VARIABLES	LABELS	Income (BDT)	Income (BDT)
-			
-treatment	treatment	149.1	
-		(151.6)	
-time	Period (0=Baseline, 1=Endline)	405.2***	405.2***
-		(130.5)	(130.0)
-treat_post	Treatment × Post	-47.12	-47.12
-		(224.6)	(223.8)
-Constant	Constant	463.6	474.0***
-		(284.7)	(59.98)
-			
-Observations		990	990
-R-squared		0.013	0.023
-Division FE		Yes	Yes
-Individual FE		No	Yes
-Number of idno			495
-Robust standard errors in parentheses			
-*** p<0.01, ** p<0.05, * p<0.1			
+		(1)
+VARIABLES	LABELS	DiD - Income
+		
+treatment	treatment	163.8
+		(151.0)
+o.time	time = o,	-
+		
+o.treat_post	Treatment x Post = o,	-
+		
+2.division_code	Division (stratification level) = 2, Chattogram	14.74
+		(255.6)
+3.division_code	Division (stratification level) = 3, Dhaka	-356.3
+		(228.1)
+4.division_code	Division (stratification level) = 4, Khulna	-183.1
+		(247.7)
+5.division_code	Division (stratification level) = 5, Mymensingh	122.9
+		(390.7)
+6.division_code	Division (stratification level) = 6, Rajshahi	-49.58
+		(236.8)
+7.division_code	Division (stratification level) = 7, Rangpur	109.2
+		(401.5)
+Constant	Constant	490.8**
+		(237.1)
+		
+Observations		495
+R-squared		0.015
+Division FE		Yes
+Individual FE		No
+Robust standard errors in parentheses		
+*** p<0.01, ** p<0.05, * p<0.1		
