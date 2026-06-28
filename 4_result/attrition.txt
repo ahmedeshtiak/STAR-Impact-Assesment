@@ -1,58 +1,82 @@
-		(1)
-VARIABLES	LABELS	Attrited (1 = not found in endline)
-		
-1.treatment	treatment = 1, Treatment	0.234
-		(0.181)
-youth_age	Youth Age (years)	0.006
-		(0.004)
-1.youth_male	Youth is Male = 1	-0.071
-		(0.047)
-1.youth_married	Youth is Married = 1	-0.068
-		(0.069)
-hh_size	Household Size	-0.013
-		(0.012)
-land_amount	Land Amount	0.000
-		(0.001)
-num_cows	Number of Cows	-0.023
-		(0.019)
-num_goats_sheep	Goats/Sheep Owned	0.048***
-		(0.015)
-monthly_income	Household monthly average income (BDT)	0.000
-		(0.000)
-treat_X_youth_age	Treatment × youth_age	-0.013**
-		(0.006)
-treat_X_youth_male	Treatment × youth_male	0.069
-		(0.069)
-treat_X_youth_married	Treatment × youth_married	0.169*
-		(0.100)
-treat_X_hh_size	Treatment × hh_size	-0.001
-		(0.018)
-treat_X_land_amount	Treatment × land_amount	-0.000
-		(0.001)
-treat_X_num_cows	Treatment × num_cows	0.062**
-		(0.025)
-treat_X_num_goats_sheep	Treatment × num_goats_sheep	-0.053**
-		(0.024)
-treat_X_monthly_income	Treatment × monthly_income	-0.000
-		(0.000)
-2.division_code	Division (stratification level) = 2, Chattogram	0.010
-		(0.080)
-3.division_code	Division (stratification level) = 3, Dhaka	0.008
-		(0.080)
-4.division_code	Division (stratification level) = 4, Khulna	0.030
-		(0.078)
-5.division_code	Division (stratification level) = 5, Mymensingh	0.029
-		(0.091)
-6.division_code	Division (stratification level) = 6, Rajshahi	-0.019
-		(0.087)
-7.division_code	Division (stratification level) = 7, Rangpur	0.038
-		(0.098)
-Constant	Constant	0.330**
-		(0.139)
-		
-Observations		896
-R-squared		0.028
-Adj. R-squared		0.00216
-F-statistic		1.810
-Robust standard errors in parentheses		
-*** p<0.01, ** p<0.05, * p<0.1		
+	(1)	(2)	(3)
+VARIABLES	attrited	attrited	attrited
+			
+1.treatment			0.251
+			(0.171)
+youth_age		-0.00183	0.00398
+		(0.00340)	(0.00430)
+1.youth_male		-0.0523	-0.0754
+		(0.0332)	(0.0475)
+1.youth_married		0.0525	-0.0186
+		(0.0507)	(0.0800)
+hh_size		-0.0120	-0.0124
+		(0.00941)	(0.0134)
+land_amount		-0.000215	8.51e-05
+		(0.000677)	(0.00104)
+num_cows		0.00623	-0.0118
+		(0.0176)	(0.0211)
+num_goats_sheep		0.0277**	0.0422***
+		(0.0110)	(0.0143)
+monthly_hh_income		1.71e-06	2.28e-06
+		(1.48e-06)	(2.03e-06)
+2.division_code		-0.0255	-0.0295
+		(0.0723)	(0.0738)
+3.division_code		-0.0138	-0.0165
+		(0.0724)	(0.0739)
+4.division_code		-0.0356	-0.0367
+		(0.0707)	(0.0716)
+5.division_code		0.0347	0.0335
+		(0.0828)	(0.0838)
+6.division_code		-0.0655	-0.0716
+		(0.0801)	(0.0819)
+7.division_code		0.0252	0.0225
+		(0.0873)	(0.0897)
+0b.treatment#co.youth_age			0
+			(0)
+1.treatment#c.youth_age			-0.0122*
+			(0.00659)
+0b.treatment#0b.youth_male			0
+			(0)
+0b.treatment#1o.youth_male			0
+			(0)
+1o.treatment#0b.youth_male			0
+			(0)
+1.treatment#1.youth_male			0.0533
+			(0.0738)
+0b.treatment#0b.youth_married			0
+			(0)
+0b.treatment#1o.youth_married			0
+			(0)
+1o.treatment#0b.youth_married			0
+			(0)
+1.treatment#1.youth_married			0.142
+			(0.116)
+0b.treatment#co.hh_size			0
+			(0)
+1.treatment#c.hh_size			0.00256
+			(0.0186)
+0b.treatment#co.land_amount			0
+			(0)
+1.treatment#c.land_amount			-0.000585
+			(0.00144)
+0b.treatment#co.num_cows			0
+			(0)
+1.treatment#c.num_cows			0.0376
+			(0.0268)
+0b.treatment#co.num_goats_sheep			0
+			(0)
+1.treatment#c.num_goats_sheep			-0.0327
+			(0.0249)
+0b.treatment#co.monthly_hh_income			0
+			(0)
+1.treatment#c.monthly_hh_income			-1.12e-06
+			(2.76e-06)
+treatment	0.0266	0.0230	
+	(0.0332)	(0.0307)	
+Constant	0.434***	0.534***	0.424***
+	(0.0235)	(0.113)	(0.133)
+			
+Observations	896	896	896
+R-squared	0.001	0.017	0.026
+Standard errors in parentheses			
+*** p<0.01, ** p<0.05, * p<0.1			
